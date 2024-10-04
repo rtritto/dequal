@@ -1,20 +1,28 @@
-const { join } = require('path');
+const { join } = require('node:path');
 const { Suite } = require('benchmark');
-const klona = require('klona');
+const { klona } = require('klona/lite');
 
 console.log('Load times:');
 
 console.time('assert');
-const { deepStrictEqual } = require('assert');
+const { deepStrictEqual } = require('node:assert');
 console.timeEnd('assert');
 
 console.time('util');
-const { isDeepStrictEqual } = require('util');
+const { isDeepStrictEqual } = require('node:util');
 console.timeEnd('util');
 
 console.time('fast-deep-equal');
 const fastdeep = require('fast-deep-equal');
 console.timeEnd('fast-deep-equal');
+
+console.time('fast-equals/deepEqual');
+const { deepEqual } = require('fast-equals');
+console.timeEnd('fast-equals/deepEqual');
+
+console.time('fast-equals/strictDeepEqual');
+const { strictDeepEqual } = require('fast-equals');
+console.timeEnd('fast-equals/strictDeepEqual');
 
 console.time('lodash/isequal');
 const lodash = require('lodash/isequal');
@@ -25,12 +33,16 @@ const nanoequal = require('nano-equal');
 console.timeEnd('nano-equal');
 
 console.time('dequal');
-const { dequal } = require('dequal');
+const { dequal } = require('../src/index.js');
 console.timeEnd('dequal');
 
 console.time('dequal/lite');
-const lite = require('dequal/lite');
+const lite = require('../src/lite.js');
 console.timeEnd('dequal/lite');
+
+console.time('customDeepEqual');
+const { deepEqual: customDeepEqual } = require('../custom.js');
+console.timeEnd('customDeepEqual');
 
 function naiive(a, b) {
 	try {
@@ -74,7 +86,7 @@ function runner(name, contenders) {
 
 	Object.keys(contenders).forEach(name => {
 		const { foo, bar } = klona(fixture);
-		bench.add(name + ' '.repeat(22 - name.length), () => {
+		bench.add(name/* + ' '.repeat(22 - name.length)*/, () => {
 			// contenders[name]({ a: 1, b: 2, c: 3 }, { a: 1, b: 4, c: 3 });
 			contenders[name](foo, bar);
 		})
@@ -87,16 +99,22 @@ runner('basic', {
 	'assert.deepStrictEqual': naiive,
 	'util.isDeepStrictEqual': isDeepStrictEqual,
 	'fast-deep-equal': fastdeep,
+	'fast-equals/deepEqual': deepEqual,
+	'fast-equals/strictDeepEqual': strictDeepEqual,
 	'lodash.isEqual': lodash,
 	'nano-equal': nanoequal,
 	'dequal/lite': lite.dequal,
 	'dequal': dequal,
+	'customDeepEqual': customDeepEqual,
 });
 
 // Only keep those that pass
 runner('complex', {
 	'assert.deepStrictEqual': naiive,
 	'util.isDeepStrictEqual': isDeepStrictEqual,
+	'fast-equals/deepEqual': deepEqual,
+	'fast-equals/strictDeepEqual': strictDeepEqual,
 	'lodash.isEqual': lodash,
 	'dequal': dequal,
+	'customDeepEqual': customDeepEqual,
 });
